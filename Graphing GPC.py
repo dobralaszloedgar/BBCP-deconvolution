@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Initial variables
-txt_file = "D:/Guironnet Lab/GPC/PS-b-PLA/Ref vs Toluene.txt"
+txt_file = "D:/Guironnet Lab/GPC Samples/02.16.2024_OT2_Test1_Ar.txt"
 color_palette = 18
 RI_calibration = "./RI Calibration curve.txt"
 x_lim = [1e3, 1e8]
@@ -41,6 +41,8 @@ def color(number):
             return "#4059AD"
         elif number == 5:
             return "#037171"
+        elif number == 6:
+            return "FF3562"
 
     elif color_palette == 2:
         if number == 0:
