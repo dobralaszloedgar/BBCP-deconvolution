@@ -28,7 +28,7 @@ x_lim = [8, 19]
 y_lim = [0, 1.2]
 number_of_peaks = 1
 peaks = []  # only enter peaks if you want to specify them manually, otherwise leave list empty
-peak_wideness_range = [100, 800]  # set default to [100, 800], only change if peaks are really wide or narrow
+peak_wideness_range = [100, 500]  # set default to [100, 800], only change if peaks are really wide or narrow
 
 # Initial variables defined, do not change!!
 integrals = []
@@ -52,7 +52,7 @@ def max_of_y_within_range(x_array, y_array):
 
 
 def min_of_y_within_range(x_array, y_array):
-    mask = np.logical_and(x_array > 1e3, x_array < 1e4)
+    mask = np.logical_and(x_array > 8, x_array < 18)
     return np.min(y_array[mask])
 
 
@@ -153,6 +153,8 @@ for val in range(peak_wideness_range[0], peak_wideness_range[1]):
 
 # Sort peaks based on x range
 Gauss_Peaks_New = sort_gaussian_peaks(Gauss_Peaks_New)
+
+
 
 # Integrate peaks
 for i in range(number_of_peaks):
