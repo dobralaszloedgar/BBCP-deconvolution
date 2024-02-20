@@ -2,18 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
-from scipy.integrate import trapezoid
+
 
 txt_file = "G:/Edgar Dobra/GPC Samples/02.16.2024_OT2_Test1_Ar.txt"
+RI_calibration = "./RI Calibration curve.txt"
+graph_number = 1  # a number in which location the respective graph is, from 1
 
 # PS values
-PS_Mn = 4500
 mass_of_PS = 100  # in mg
-PS_percent_of_functionalization = 96  # give it in x%
-
-# PLA values
-PLA_Mn = 4006
-mass_of_M3OH = 15.08 / 5  # in mg
+PS_percent_of_functionalization = 95.5  # give it in x%
 
 # G3 values
 G3_used = 46  # in microliters
@@ -21,17 +18,19 @@ concentration_of_G3 = 2  # in mg/mL
 
 # Molar masses
 molar_mass_of_G3 = 884.54
-molar_mass_of_M3OH = 124.15
+PS_Mn = 4900
 
 # Graph setup
 x_lim = [8, 19]
 y_lim = [0, 1.2]
 number_of_peaks = 1
 peaks = []  # only enter peaks if you want to specify them manually, otherwise leave list empty
-peak_wideness_range = [100, 500]  # set default to [100, 800], only change if peaks are really wide or narrow
+peak_wideness_range = [100, 400]  # set default to [100, 800], only change if peaks are really wide or narrow
 
 # Initial variables defined, do not change!!
 integrals = []
+graphs = []
+Mn = []
 fit_check_0 = 1e10
 initial_guess_for_peak_fit = [1, 0.1]  # initial guess for peak amplitude & standard deviation, set default to [1, 0.1]
 
@@ -43,6 +42,15 @@ list_content = []
 for row in content:
     list_content.append(row.strip("\n").split("\t"))
 data_array = np.array(list_content)
+
+
+file_RI = open(RI_calibration, "r")
+content_RI = file_RI.readlines()
+file_RI.close()
+list_content_RI = []
+for row in content_RI:
+    list_content_RI.append(row.strip("\n").split("\t"))
+data_array_RI = np.array(list_content_RI)
 
 
 # Get maximum between bounds
@@ -99,68 +107,99 @@ def sort_gaussian_peaks(arr):
     return np.array(sorted_arr)
 
 
-# Get x and y values for original graph and create original graph
-x, y = get_new_data(get_data(0)[0], get_data(0)[1])
-plt.plot(x, y, label="Original UV Graph")
+x_a = np.delete(data_array_RI[:, 1], [0, 1], 0)
+x_a = x_a.astype(float)
+x_IR = np.delete(data_array_RI[:, 0], [0, 1], 0)
+x_IR = x_IR.astype(float)
+x_a = 10 ** x_a
+_, x_a = get_new_data(x_IR, x_a)
+
+for graph in range(graph_number-1 ,graph_number):
+    #print(graph)
+    #y_Gauss_New = np.empty((0,0))
+
+    # Get x and y values for original graph and create original graph
+    x, y = get_new_data(get_data(graph)[0], get_data(graph)[1])
+    plt.plot(x, y, label="Original Graph " + str(graph+1))
 
 
-# Manual or automatic peak detection
-if len(peaks) == 0:
-    indices, _ = find_peaks(y, distance=200, width=50)
-    x_indices = [x[j] for j in indices]
-    y_indices = [y[j] for j in indices]
-else:
+    # Manual or automatic peak detection
     x_indices = []
     y_indices = []
-    for i in range(len(peaks)):
-        index = np.where(peaks[i] == x)
-        x_indices.append(float(x[index]))
-        y_indices.append(float(y[index]))
+    if len(peaks) == 0:
+        indices, _ = find_peaks(y, distance=200, width=50)
+        x_indices = [x[j] for j in indices]
+        y_indices = [y[j] for j in indices]
+    else:
+        x_indices = []
+        y_indices = []
+        for i in range(len(peaks)):
+            index = np.where(peaks[i] == x)
+            x_indices.append(float(x[index]))
+            y_indices.append(float(y[index]))
+    #plt.plot(x_indices, y_indices, "go")
+    #Gauss_peaks = []
+    #Gauss_peaks_array = np.array(Gauss_peaks)
 
+    #y_Gauss = np.empty((0, 0))
+    #y_new = np.sbtract(y_new, y_fit)
+    # Generate Gaussian fits, find best fit
+    for val in range(peak_wideness_range[0], peak_wideness_range[1]):
+        y_new = y
+        y_Gauss = np.array([0 for j in y_new])
+        Gauss_peaks = []
+        fit_check = 0
+        for i in range(number_of_peaks):
+            peak_x = int(np.where(x == x_indices[n_largest(y_indices, i + 1)])[0])
+            y_p = [0] * len(y_new)
 
-# Generate Gaussian fits, find best fit
-for val in range(peak_wideness_range[0], peak_wideness_range[1]):
-    y_new = y
-    y_Gauss = np.array([0 for j in y_new])
-    Gauss_peaks = []
-    fit_check = 0
-    for i in range(number_of_peaks):
-        peak_x = int(np.where(x == x_indices[n_largest(y_indices, i + 1)])[0])
-        y_p = [0] * len(y_new)
+            for j in range(peak_x - val, peak_x + val):
+                y_p[j] = y_new[j]
 
-        for j in range(peak_x - val, peak_x + val):
-            y_p[j] = y_new[j]
+            initial_guess = [initial_guess_for_peak_fit[0], x_indices[n_largest(y_indices, i + 1)],
+                             initial_guess_for_peak_fit[1]]  # initial values for amplitude, mean, and standard deviation
+            params, covariance = curve_fit(gaussian, x, y_p, p0=initial_guess)
 
-        initial_guess = [initial_guess_for_peak_fit[0], x_indices[n_largest(y_indices, i + 1)],
-                         initial_guess_for_peak_fit[1]]  # initial values for amplitude, mean, and standard deviation
-        params, covariance = curve_fit(gaussian, x, y_p, p0=initial_guess)
+            amplitude_fit, mean_fit, stddev_fit = params
 
-        amplitude_fit, mean_fit, stddev_fit = params
+            y_fit = gaussian(x, amplitude_fit, mean_fit, stddev_fit)
 
-        y_fit = gaussian(x, amplitude_fit, mean_fit, stddev_fit)
+            Gauss_peaks.append(y_fit)
+            Gauss_peaks_array = np.array(Gauss_peaks)
 
-        Gauss_peaks.append(y_fit)
-        Gauss_peaks_array = np.array(Gauss_peaks)
+            y_Gauss = np.add(y_Gauss, y_fit)
+            y_new = np.subtract(y_new, y_fit)
 
-        y_Gauss = np.add(y_Gauss, y_fit)
-        y_new = np.subtract(y_new, y_fit)
+        fit_check = np.sum(np.abs(y_new))
+        if fit_check < fit_check_0:
+            fit_check_0 = fit_check
+            y_Gauss_New = y_Gauss
+            Gauss_Peaks_New = Gauss_peaks_array
 
-    fit_check = np.sum(np.abs(y_new))
-    if fit_check < fit_check_0:
-        fit_check_0 = fit_check
-        y_Gauss_New = y_Gauss
-        Gauss_Peaks_New = Gauss_peaks_array
+    # Sort peaks based on x range
+    Gauss_Peak_1 = sort_gaussian_peaks(Gauss_Peaks_New)[0]
+    graphs.append(Gauss_Peak_1.tolist())
+    #print(x_a)
+    #print("GP " + str(graph_number) + ": " + str(Gauss_Peak_1))
+    Mn.append(np.sum(np.multiply(Gauss_Peak_1, x_a))/np.sum(Gauss_Peak_1))
 
-# Sort peaks based on x range
-Gauss_Peaks_New = sort_gaussian_peaks(Gauss_Peaks_New)
+    # Plot Gaussian fit
+    plt.plot(x, y_Gauss_New, "--", label='Gaussian Fit ' + str(graph+1))
+    ax = plt.gca()
+    ax.set_xlim(x_lim)
+    ax.set_ylim(y_lim)
+    plt.xlabel("Time")
+    plt.ylabel("Normalization")
+    plt.legend()
 
+    # Final print
 
+    plt.show()
 
-# Integrate peaks
-for i in range(number_of_peaks):
-    y_data = Gauss_Peaks_New[i, :]
-    result = trapezoid(Gauss_Peaks_New[i, :])
-    integrals.append(result)
+graphs = np.array(graphs)
+
+print("Mn " + str(graph_number) + ": " + str(Mn))
+
 
 # Calculations
 G3_moles_0 = (concentration_of_G3 * G3_used * 1e-3) / molar_mass_of_G3
@@ -168,9 +207,8 @@ PS_moles = mass_of_PS * PS_percent_of_functionalization / 100 / PS_Mn
 
 
 
-# Plot Gaussian fit
-plt.plot(x, y_Gauss_New, "--", label='Gaussian Fit')
 
+'''
 # Set up plotting
 ax = plt.gca()
 ax.set_xlim(x_lim)
@@ -183,3 +221,4 @@ plt.legend()
 # Final print
 
 plt.show()
+'''
