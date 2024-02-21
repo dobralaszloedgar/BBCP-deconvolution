@@ -4,9 +4,9 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
 
-txt_file = "G:/Edgar Dobra/GPC Samples/02.16.2024_OT2_Test1_Ar.txt"
+txt_file = "G:/Edgar Dobra/GPC Samples/02.19.2024_OT2_Test2_Air.txt"
 RI_calibration = "./RI Calibration curve.txt"
-graph_number = 1  # a number in which location the respective graph is, from 1
+graph_number = 7  # a number in which location the respective graph is, from 1
 
 # PS values
 mass_of_PS = 100  # in mg
@@ -23,15 +23,14 @@ PS_Mn = 4900
 # Graph setup
 x_lim = [8, 19]
 y_lim = [0, 1.2]
-number_of_peaks = 1
+number_of_peaks = 2
 peaks = []  # only enter peaks if you want to specify them manually, otherwise leave list empty
-peak_wideness_range = [100, 400]  # set default to [100, 800], only change if peaks are really wide or narrow
+peak_wideness_range = [100, 300]  # set default to [100, 800], only change if peaks are really wide or narrow
 
 # Initial variables defined, do not change!!
 integrals = []
 graphs = []
 Mn = []
-fit_check_0 = 1e10
 initial_guess_for_peak_fit = [1, 0.1]  # initial guess for peak amplitude & standard deviation, set default to [1, 0.1]
 
 # Reading in data and initial formatting
@@ -114,9 +113,12 @@ x_IR = x_IR.astype(float)
 x_a = 10 ** x_a
 _, x_a = get_new_data(x_IR, x_a)
 
-for graph in range(graph_number-1 ,graph_number):
+for graph in range(int(len(data_array[0, :])/2)):
     #print(graph)
     #y_Gauss_New = np.empty((0,0))
+    fit_check_0 = 1e10
+    Gauss_Peaks_New = []
+    y_Gauss_New = []
 
     # Get x and y values for original graph and create original graph
     x, y = get_new_data(get_data(graph)[0], get_data(graph)[1])
@@ -181,7 +183,7 @@ for graph in range(graph_number-1 ,graph_number):
     graphs.append(Gauss_Peak_1.tolist())
     #print(x_a)
     #print("GP " + str(graph_number) + ": " + str(Gauss_Peak_1))
-    Mn.append(np.sum(np.multiply(Gauss_Peak_1, x_a))/np.sum(Gauss_Peak_1))
+    Mn.append(round(np.sum(np.multiply(Gauss_Peak_1, x_a))/np.sum(Gauss_Peak_1)))
 
     # Plot Gaussian fit
     plt.plot(x, y_Gauss_New, "--", label='Gaussian Fit ' + str(graph+1))
@@ -194,12 +196,12 @@ for graph in range(graph_number-1 ,graph_number):
 
     # Final print
 
-    plt.show()
+
 
 graphs = np.array(graphs)
 
-print("Mn " + str(graph_number) + ": " + str(Mn))
-
+print("Mn: " + str(Mn))
+plt.show()
 
 # Calculations
 G3_moles_0 = (concentration_of_G3 * G3_used * 1e-3) / molar_mass_of_G3
