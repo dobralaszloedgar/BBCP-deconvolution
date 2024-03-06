@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Initial variables
-txt_file = "G:/Edgar Dobra/GPC Samples/02.16.2024_OT2_Test1_Ar.txt"
-color_palette = 1
+txt_file = "G:/Edgar Dobra/GPC Samples/03.01.2024_OT2_PS-b-PLA_PS-b-PLA.txt"
+color_palette = 2
 RI_calibration = "./RI Calibration curve.txt"
 x_lim = [1e3, 1e8]
 y_lim = [0, 1.2]
